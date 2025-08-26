@@ -93,6 +93,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/pages', [App\Http\Controllers\PageController::class, 'store']);
 });
 
+// ============================ REELS API ================================
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/uploadreel', [App\Http\Controllers\Reels::class, 'uploadreel']);
+    Route::post('/getreels', [App\Http\Controllers\Reels::class, 'getreels']);
+});
+
+
 // ============================ POSTS API ================================
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/textposts', [App\Http\Controllers\PostController::class, 'storetext']);
