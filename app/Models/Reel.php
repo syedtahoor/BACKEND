@@ -26,4 +26,8 @@ class Reel extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+    public function likes()
+    {
+        return $this->hasMany(ReelLike::class, 'reel_id');
+    }
 }

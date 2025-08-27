@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Reel;
+use App\Models\ReelLike;
 
 class Reels extends Controller
 {
@@ -57,19 +58,76 @@ class Reels extends Controller
     {
         $currentUserId = auth()->id();
 
-        // frontend se aaye IDs jo sirf is user ke liye already fetched hain
         $fetchedReelIds = $request->input('already_fetched_ids', []);
 
         $reels = Reel::with(['user.profile'])
-            ->whereNotIn('id', $fetchedReelIds) // exclude sirf current user ki list
+            ->where('user_id', '!=', $currentUserId)
+            ->whereNotIn('id', $fetchedReelIds)
             ->inRandomOrder()
             ->take(3)
-            ->get();
+            ->get()
+            ->map(function ($reel) use ($currentUserId) {
+                // total likes
+                $reel->likes_count = ReelLike::where('reel_id', $reel->id)->count();
+
+                // check if current user liked this reel
+                $reel->is_liked = ReelLike::where('reel_id', $reel->id)
+                    ->where('user_id', $currentUserId)
+                    ->exists();
+
+                return $reel;
+            });
 
         return response()->json([
             'status' => true,
             'fetched_ids' => $reels->pluck('id'),
             'data' => $reels
         ]);
+    }
+
+    public function storereellike(Request $request)
+    {
+        $userId = auth()->id();
+        $reelId = $request->input('reel_id');
+
+        // Check agar pehle se like hai
+        $existing = ReelLike::where('user_id', $userId)
+            ->where('reel_id', $reelId)
+            ->first();
+
+        if ($existing) {
+            // Agar pehle se like hai to unlike kar do
+            $existing->delete();
+
+            // Reels table mein likes count minus karo (Model approach)
+            $reel = Reel::find($reelId);
+            if ($reel) {
+                $reel->decrement('likes');
+            }
+
+            return response()->json([
+                'status' => true,
+                'liked' => false,
+                'message' => 'Reel unliked successfully'
+            ]);
+        } else {
+            // Naya like insert karo
+            ReelLike::create([
+                'user_id' => $userId,
+                'reel_id' => $reelId
+            ]);
+
+            // Reels table mein likes count plus karo (Model approach)
+            $reel = Reel::find($reelId);
+            if ($reel) {
+                $reel->increment('likes');
+            }
+
+            return response()->json([
+                'status' => true,
+                'liked' => true,
+                'message' => 'Reel liked successfully'
+            ]);
+        }
     }
 }

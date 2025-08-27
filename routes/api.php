@@ -97,6 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/uploadreel', [App\Http\Controllers\Reels::class, 'uploadreel']);
     Route::post('/getreels', [App\Http\Controllers\Reels::class, 'getreels']);
+    Route::post('/storereellike', [App\Http\Controllers\Reels::class, 'storereellike']);
 });
 
 
